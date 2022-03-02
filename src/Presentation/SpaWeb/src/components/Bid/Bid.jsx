@@ -24,7 +24,7 @@ export const Bid = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [connection] = useState(() =>
-    new HubConnectionBuilder().withUrl("https://localhost:5001/bidHub").build()
+    new HubConnectionBuilder().withUrl("https://localhost:51677/bidHub").build()
   );
   const [highestBid, setHighestBid] = useState(0);
   const [nextBidMinimumAmount, setNextBidMinimumAmount] = useState();

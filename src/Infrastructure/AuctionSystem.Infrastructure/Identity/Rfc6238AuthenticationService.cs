@@ -1,11 +1,12 @@
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
+
 namespace AuctionSystem.Infrastructure.Identity
 {
-    using System;
-    using System.Diagnostics;
-    using System.Net;
-    using System.Security.Cryptography;
-    using System.Text;
-    using static System.String;
+    using static String;
 
     internal sealed class SecurityToken
     {
@@ -16,7 +17,10 @@ namespace AuctionSystem.Infrastructure.Identity
             this.data = (byte[])data.Clone();
         }
 
-        internal byte[] GetDataNoClone() => this.data;
+        internal byte[] GetDataNoClone()
+        {
+            return data;
+        }
     }
 
     internal static class Rfc6238AuthenticationService
@@ -25,10 +29,11 @@ namespace AuctionSystem.Infrastructure.Identity
         private static readonly TimeSpan TimeSpan = TimeSpan.FromMinutes(3);
         private static readonly Encoding Encoding = new UTF8Encoding(false, true);
 
-        private static int ComputeTotp(HashAlgorithm hashAlgorithm, ulong timeSpan, string modifier, int numberOfDigits = 6)
+        private static int ComputeTotp(HashAlgorithm hashAlgorithm, ulong timeSpan, string modifier,
+            int numberOfDigits = 6)
         {
-            // # of 0's = length of pin
-            //const int mod = 1000000;
+            // #of 0's = length of pin
+            // Const int mod = 1000000;
             var mod = (int)Math.Pow(10, numberOfDigits);
 
             // See https://tools.ietf.org/html/rfc4226
@@ -39,12 +44,12 @@ namespace AuctionSystem.Infrastructure.Identity
             // Generate DT string
             var offset = hash[^1] & 0xf;
             Debug.Assert(offset + 4 < hash.Length);
-            var binaryCode = (hash[offset] & 0x7f) << 24
-                             | (hash[offset + 1] & 0xff) << 16
-                             | (hash[offset + 2] & 0xff) << 8
+            var binaryCode = ((hash[offset] & 0x7f) << 24)
+                             | ((hash[offset + 1] & 0xff) << 16)
+                             | ((hash[offset + 2] & 0xff) << 8)
                              | (hash[offset + 3] & 0xff);
 
-            var code =  binaryCode % mod;
+            var code = binaryCode % mod;
             return code;
         }
 
@@ -71,7 +76,6 @@ namespace AuctionSystem.Infrastructure.Identity
 
         public static int GenerateCode(SecurityToken securityToken, string modifier = null, int numberOfDigits = 6)
         {
-           
             if (securityToken == null)
             {
                 throw new ArgumentNullException(nameof(securityToken));
@@ -80,11 +84,12 @@ namespace AuctionSystem.Infrastructure.Identity
             // Allow a variance of no greater than 90 seconds in either direction
             var currentTimeStep = GetCurrentTimeStepNumber();
             using var hashAlgorithm = new HMACSHA1(securityToken.GetDataNoClone());
-            var code =  ComputeTotp(hashAlgorithm, currentTimeStep, modifier, numberOfDigits);
+            var code = ComputeTotp(hashAlgorithm, currentTimeStep, modifier, numberOfDigits);
             return code;
         }
 
-        public static bool ValidateCode(SecurityToken securityToken, int code, string modifier = null, int numberOfDigits = 6)
+        public static bool ValidateCode(SecurityToken securityToken, int code, string modifier = null,
+            int numberOfDigits = 6)
         {
             if (securityToken == null)
             {
@@ -96,7 +101,8 @@ namespace AuctionSystem.Infrastructure.Identity
             using var hashAlgorithm = new HMACSHA1(securityToken.GetDataNoClone());
             for (var i = -2; i <= 2; i++)
             {
-                var computedTotp = ComputeTotp(hashAlgorithm, (ulong)((long)currentTimeStep + i), modifier, numberOfDigits);
+                var computedTotp = ComputeTotp(hashAlgorithm, (ulong)((long)currentTimeStep + i), modifier,
+                    numberOfDigits);
                 if (computedTotp == code)
                 {
                     return true;
